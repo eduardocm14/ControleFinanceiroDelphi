@@ -10,17 +10,14 @@ uses
   FireDAC.Phys.Intf, FireDAC.DApt.Intf, FireDAC.Stan.Async, FireDAC.DApt,
   FireDAC.Comp.DataSet, FireDAC.Comp.Client, Vcl.Imaging.jpeg,
   VclTee.TeeGDIPlus, VCLTee.TeEngine, VCLTee.Series, VCLTee.TeeProcs,
-  VCLTee.Chart, Vcl.WinXPickers;
+  VCLTee.Chart, Vcl.WinXPickers, Vcl.Mask, Vcl.DBCtrls;
 
 type
   TFrmPrincipal = class(TForm)
-    pnlCabecalho: TPanel;
     pnlPesquisar: TPanel;
     StatusBar1: TStatusBar;
-    gpbPainelVencimentos: TGroupBox;
-    gpbRelatorioFinanceiro: TGroupBox;
     rgPesquisar: TRadioGroup;
-    PopupMenu1: TPopupMenu;
+    pmContasLancadas: TPopupMenu;
     CadastrarConta1: TMenuItem;
     N1: TMenuItem;
     PagarConta1: TMenuItem;
@@ -32,11 +29,6 @@ type
     N3: TMenuItem;
     AtualizarListadeContas1: TMenuItem;
     Label1: TLabel;
-    Label2: TLabel;
-    Label3: TLabel;
-    Label4: TLabel;
-    Label5: TLabel;
-    Label6: TLabel;
     LanareEditarConta1: TMenuItem;
     LanaremLote1: TMenuItem;
     Label7: TLabel;
@@ -46,6 +38,15 @@ type
     dbgContasLancadas: TDBGrid;
     pnlContasPagas: TPanel;
     dbgContasPagas: TDBGrid;
+    btnPesqDatas: TButton;
+    pmContasPagas: TPopupMenu;
+    odascontaspagas1: TMenuItem;
+    pnlTotaisContasLancadas: TPanel;
+    pnlTotaisContasPagas: TPanel;
+    dbedtVlrTotalLancado: TDBEdit;
+    Label2: TLabel;
+    Label3: TLabel;
+    dbedtVlrTotalPago: TDBEdit;
     procedure rgPesquisarClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure CadastrarConta1Click(Sender: TObject);
@@ -60,8 +61,12 @@ type
     procedure dbgContasLancadasDrawColumnCell(Sender: TObject;
       const Rect: TRect; DataCol: Integer; Column: TColumn;
       State: TGridDrawState);
+    procedure lbedtPesquisarChange(Sender: TObject);
+    procedure btnPesqDatasClick(Sender: TObject);
+    procedure odascontaspagas1Click(Sender: TObject);
   private
-    procedure DescricaoPesquisar;
+    procedure PesquisarPorDescricao;
+    procedure PesquisarPorData;
     procedure LancarContas;
     procedure CadastrarContas;
     procedure PagarContas;
@@ -77,7 +82,8 @@ implementation
 
 {$R *.dfm}
 
-uses Ucontas, UlancarContas, UdmPrincipal, UpagtoContas, UlancarContasLote;
+uses Ucontas, UlancarContas, UdmPrincipal, UpagtoContas, UlancarContasLote,
+  Umetodos;
 
 procedure TFrmPrincipal.FormCreate(Sender: TObject);
 begin
@@ -102,7 +108,9 @@ end;
 
 procedure TFrmPrincipal.FormShow(Sender: TObject);
 begin
-  DescricaoPesquisar;
+  dtpDataInicio.Date := Now;
+  dtpDataFim.Date    := Now;
+  PesquisarPorDescricao;
 end;
 
 procedure TFrmPrincipal.LanareEditarConta1Click(Sender: TObject);
@@ -111,18 +119,22 @@ begin
 end;
 
 procedure TFrmPrincipal.LanaremLote1Click(Sender: TObject);
+var
+  lFrmLancamentosLote: TFrmLancamentosLote;
 begin
   try
-    Application.CreateForm(TFrmLancamentosLote, FrmLancamentosLote);
-    FrmLancamentosLote.ShowModal;
+    Application.CreateForm(TFrmLancamentosLote, lFrmLancamentosLote);
+    lFrmLancamentosLote.ShowModal;
   finally
-    FrmLancamentosLote.Free;
+    lFrmLancamentosLote.Free;
   end;
 end;
 
 procedure TFrmPrincipal.rgPesquisarClick(Sender: TObject);
 begin
-  DescricaoPesquisar;
+  lbedtPesquisar.Clear;
+  lbedtPesquisar.EditLabel.Caption := 'Procurar por: ' + rgPesquisar.Items[rgPesquisar.ItemIndex];
+  PesqLocate(dmPrincipal.fdqContasLancadas, lbedtPesquisar.Text, 'descricao');
 end;
 
 procedure TFrmPrincipal.AtualizarListadeContas1Click(Sender: TObject);
@@ -130,6 +142,25 @@ begin
   dmPrincipal.fdqContasLancadas.Refresh;
   Self.dbgContasLancadas.Refresh;
   dmPrincipal.fdqContasLancadas.First;
+end;
+
+procedure TFrmPrincipal.btnPesqDatasClick(Sender: TObject);
+begin
+  if rgPesquisar.ItemIndex = 1 then
+  begin
+    dmPrincipal.fdqContasLancadas.Filtered := False;
+    dmPrincipal.fdqContasLancadas.Filter := ' vencimento BETWEEN ' + QuotedStr(DateToStr(dtpDataInicio.Date)) +
+                                            '                AND ' +  QuotedStr(DateToStr(dtpDataFim.Date));
+    dmPrincipal.fdqContasLancadas.Filtered := True;
+  end
+  else if rgPesquisar.ItemIndex = 2 then
+  begin
+    dmPrincipal.fdqContasPagas.Filtered := False;
+    dmPrincipal.fdqContasPagas.Filter := ' pagamento BETWEEN ' + QuotedStr(DateToStr(dtpDataInicio.Date)) +
+                                         '               AND ' + QuotedStr(DateToStr(dtpDataFim.Date));
+    dmPrincipal.fdqContasPagas.Filtered := True;
+  end
+
 end;
 
 procedure TFrmPrincipal.CadastrarConta1Click(Sender: TObject);
@@ -165,56 +196,76 @@ begin
   LancarContas;
 end;
 
-procedure TFrmPrincipal.DescricaoPesquisar;
+procedure TFrmPrincipal.PesquisarPorData;
 begin
-  lbedtPesquisar.EditLabel.Caption := 'Procurar por: ' + rgPesquisar.Items[rgPesquisar.ItemIndex];
+  lbedtPesquisar.Enabled := False;
+  dtpDataInicio.Enabled := True;
+  dtpDataFim.Enabled := True;
+  btnPesqDatas.Enabled := True;
+end;
 
-  if rgPesquisar.ItemIndex < 4 then
-  begin
-    lbedtPesquisar.Enabled := True;
-    dtpDataInicio.Enabled := False;
-    dtpDataFim.Enabled := False;
-  end
-  else
-  begin
-    lbedtPesquisar.Clear;
-    lbedtPesquisar.Enabled := False;
-    dtpDataInicio.Enabled := True;
-    dtpDataFim.Enabled := True;
-  end;
-
-  Self.Refresh;
+procedure TFrmPrincipal.PesquisarPorDescricao;
+begin
+  lbedtPesquisar.Enabled := True;
+  dtpDataInicio.Enabled := False;
+  dtpDataFim.Enabled := False;
+  btnPesqDatas.Enabled := False;
 end;
 
 procedure TFrmPrincipal.LancarContas;
+var
+  lFrmLancarContas: TFrmLancarContas;
 begin
   try
-    Application.CreateForm(TFrmLancarContas, FrmLancarContas);
-    FrmLancarContas.ShowModal;
+    Application.CreateForm(TFrmLancarContas, lFrmLancarContas);
+    lFrmLancarContas.ShowModal;
   finally
     Self.dbgContasLancadas.DataSource.DataSet.Refresh;
     Self.dbgContasLancadas.Refresh;
-    FrmLancarContas.Free;
+    lFrmLancarContas.Free;
   end;
 end;
 
+procedure TFrmPrincipal.lbedtPesquisarChange(Sender: TObject);
+begin
+  if rgPesquisar.ItemIndex = 0 then
+  begin
+    PesquisarPorDescricao;
+    PesqLocate(dmPrincipal.fdqContasLancadas, lbedtPesquisar.Text, 'descricao');
+  end
+  else
+  begin
+    PesquisarPorData;
+  end;
+end;
+
+procedure TFrmPrincipal.odascontaspagas1Click(Sender: TObject);
+begin
+  dmPrincipal.fdqContasPagas.Filtered := False;
+  dmPrincipal.fdqContasPagas.Refresh;
+end;
+
 procedure TFrmPrincipal.CadastrarContas;
+var
+  lFrmContas: TFrmContas;
 begin
   try
-    Application.CreateForm(TFrmContas, FrmContas);
-    FrmContas.Tag := 'C';
-    FrmContas.ShowModal;
+    Application.CreateForm(TFrmContas, lFrmContas);
+    lFrmContas.Tag := 'C';
+    lFrmContas.ShowModal;
   finally
-    FrmContas.Free;
+    lFrmContas.Free;
   end;
 end;
 
 procedure TFrmPrincipal.PagarContas;
+var
+  lFrmPagto: TFrmPagto;
 begin
   try
-    Application.CreateForm(TFrmPagto, FrmPagto);
+    Application.CreateForm(TFrmPagto, lFrmPagto);
     dmPrincipal.fdqContasLancadas.Edit;
-    FrmPagto.ShowModal;
+    lFrmPagto.ShowModal;
   finally
     if dmPrincipal.fdqContasLancadas.State in [dsEdit] then
     begin
@@ -225,7 +276,7 @@ begin
     Self.dbgContasLancadas.Refresh;
     Self.dbgContasPagas.DataSource.DataSet.Refresh;
     Self.dbgContasPagas.Refresh;
-    FrmPagto.Free;
+    lFrmPagto.Free;
   end;
 end;
 

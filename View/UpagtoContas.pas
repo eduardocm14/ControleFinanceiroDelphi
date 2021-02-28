@@ -34,9 +34,6 @@ type
     { Public declarations }
   end;
 
-var
-  FrmPagto: TFrmPagto;
-
 implementation
 
 {$R *.dfm}

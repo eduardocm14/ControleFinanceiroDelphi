@@ -114,8 +114,6 @@ object FrmLancamentosLote: TFrmLancamentosLote
     Color = clInfoBk
     ParentBackground = False
     TabOrder = 1
-    ExplicitTop = 127
-    ExplicitHeight = 194
     object Label4: TLabel
       Left = 107
       Top = 48

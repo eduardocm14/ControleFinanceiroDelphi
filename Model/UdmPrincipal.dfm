@@ -37,6 +37,7 @@ object dmPrincipal: TdmPrincipal
     Top = 99
   end
   object fdqContasLancadas: TFDQuery
+    AggregatesActive = True
     Connection = FDConnection
     SQL.Strings = (
       'select'
@@ -130,6 +131,14 @@ object dmPrincipal: TdmPrincipal
       Precision = 18
       Size = 2
     end
+    object fdqContasLancadasVlrTotalLancado: TAggregateField
+      Alignment = taRightJustify
+      FieldName = 'VlrTotalLancado'
+      Active = True
+      currency = True
+      DisplayName = ''
+      Expression = 'SUM(VALORCONTA)'
+    end
   end
   object dsContasPagas: TDataSource
     DataSet = fdqContasPagas
@@ -137,6 +146,7 @@ object dmPrincipal: TdmPrincipal
     Top = 171
   end
   object fdqContasPagas: TFDQuery
+    AggregatesActive = True
     Connection = FDConnection
     SQL.Strings = (
       'select'
@@ -229,6 +239,14 @@ object dmPrincipal: TdmPrincipal
       currency = True
       Precision = 18
       Size = 2
+    end
+    object fdqContasPagasVlrContaPago: TAggregateField
+      Alignment = taRightJustify
+      FieldName = 'VlrContaPago'
+      Active = True
+      currency = True
+      DisplayName = ''
+      Expression = 'SUM(VALORPAGTO)'
     end
   end
 end

@@ -40,6 +40,8 @@ type
     StringField3: TStringField;
     FMTBCDField1: TFMTBCDField;
     FMTBCDField2: TFMTBCDField;
+    fdqContasLancadasVlrTotalLancado: TAggregateField;
+    fdqContasPagasVlrContaPago: TAggregateField;
   private
     { Private declarations }
   public

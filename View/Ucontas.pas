@@ -57,9 +57,6 @@ type
     { Public declarations }
   end;
 
-var
-  FrmContas: TFrmContas;
-
 implementation
 
 {$R *.dfm}
@@ -171,12 +168,12 @@ begin
   begin
     edtPesquisar.NumbersOnly := True;
     if Trim(edtPesquisar.Text)<> '' then
-      PesqLocate(fdqListagem, edtPesquisar, 'Id');
+      PesqLocate(fdqListagem, edtPesquisar.Text, 'Id');
   end
   else
   begin
     edtPesquisar.NumbersOnly := False;
-    PesqLocate(fdqListagem, edtPesquisar, 'Descricao');
+    PesqLocate(fdqListagem, edtPesquisar.Text, 'Descricao');
   end;
 end;
 

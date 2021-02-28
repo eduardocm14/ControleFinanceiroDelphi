@@ -49,9 +49,6 @@ type
     { Public declarations }
   end;
 
-var
-  FrmLancarContas: TFrmLancarContas;
-
 implementation
 
 {$R *.dfm}
@@ -132,21 +129,23 @@ end;
 
 procedure TFrmLancarContas.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
+var
+  lFrmContas: TFrmContas;
 begin
   if pnlLancamentos.Enabled then
   begin
     if Key = VK_F2 then
     begin
       try
-        Application.CreateForm(TFrmContas, FrmContas);
-        FrmContas.pnlButtons.Visible := False;
-        FrmContas.pnlCadastro.Visible := False;
-        FrmContas.Tag := 'P';
-        FrmContas.ShowModal;
+        Application.CreateForm(TFrmContas, lFrmContas);
+        lFrmContas.pnlButtons.Visible := False;
+        lFrmContas.pnlCadastro.Visible := False;
+        lFrmContas.Tag := 'P';
+        lFrmContas.ShowModal;
       finally
-        Self.dbedtContaCodigo.Text    := FrmContas.ContaCod.ToString;
-        Self.dbedtContaDescricao.Text := FrmContas.ContaDescricao;
-        FrmContas.Free;
+        Self.dbedtContaCodigo.Text    := lFrmContas.ContaCod.ToString;
+        Self.dbedtContaDescricao.Text := lFrmContas.ContaDescricao;
+        lFrmContas.Free;
       end;
     end;
   end;

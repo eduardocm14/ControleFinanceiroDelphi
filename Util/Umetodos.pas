@@ -5,7 +5,7 @@ interface
 uses
   FireDAC.Comp.Client, Vcl.StdCtrls, System.UITypes;
 
-  procedure PesqLocate(cds:TFDQuery; edtPesq:TEdit; campoPesq:string);
+  procedure PesqLocate(cds:TFDQuery; edtPesq:string; campoPesq:string);
   function Selecionar(pTabela, pCampo, pFiltro:string):string;
   function ValidaInteger(const num: string ): Boolean;
 
@@ -14,11 +14,11 @@ implementation
 uses
   Data.DB, System.SysUtils, UdmPrincipal, Vcl.Dialogs;
 
-procedure PesqLocate(cds:TFDQuery; edtPesq:TEdit; campoPesq:string);
+procedure PesqLocate(cds:TFDQuery; edtPesq:string; campoPesq:string);
 begin
-  cds.Locate(campoPesq, edtPesq.Text,[loPartialKey, loCaseInsensitive]);
+  cds.Locate(campoPesq, edtPesq,[loPartialKey, loCaseInsensitive]);
   cds.Filtered := False;
-  cds.Filter := 'UPPER(' + campoPesq + ') LIKE' + UpperCase(QuotedStr('%'+ Trim(edtPesq.Text) + '%'));
+  cds.Filter := 'UPPER(' + campoPesq + ') LIKE' + UpperCase(QuotedStr('%'+ Trim(edtPesq) + '%'));
   cds.Filtered := True;
 end;
 

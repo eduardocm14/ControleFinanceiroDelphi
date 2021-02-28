@@ -28,9 +28,6 @@ type
     { Public declarations }
   end;
 
-var
-  FrmLancamentosLote: TFrmLancamentosLote;
-
 implementation
 
 {$R *.dfm}
